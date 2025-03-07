@@ -72,6 +72,11 @@
                     if (strpos($subdir, '/') !== false && strpos($subdir, '/') < strlen($subdir) - 1) {
                         continue;
                     }
+
+                    // check if file is hidden (starts with dot)
+                    if (strpos($name, '.') === 0) {
+                        continue;
+                    }
                     
                     // check file type
                     if (strpos($name, '.insv') == true) {
