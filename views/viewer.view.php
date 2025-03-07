@@ -106,10 +106,27 @@
 
             </div>
             <div class="col-md-4">
-                <a href="<?= $_CONFIG['base_url']; ?>viewer?download=true&path=<?= $path; ?>" class="btn btn-primary btn-lg py-3 w-100">
-                    <i class="fa-regular fa-download me-2"></i>
-                    Download
-                </a>
+                <?php if ($object['ContentType'] == 'video/mp4' && ($object['ContentLength'] / 1024 / 1024) < 200): ?>
+                    <!-- Example split danger button -->
+                    <div class="btn-group w-100">
+                        <a type="button" class="btn btn-primary btn-lg py-3 w-100" href="<?= $_CONFIG['base_url']; ?>viewer?download=true&path=<?= $path; ?>">
+                            <i class="fa-regular fa-download me-2"></i>
+                            Download
+                        </a>
+                        <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="visually-hidden">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="https://ezgif.com/video-compressor?url=<?= urlencode($url); ?>">Video komprimieren</a></li>
+                            <li><a class="dropdown-item" href="https://ezgif.com/cut-video?url=<?= urlencode($url); ?>">Video zuschneiden</a></li>
+                        </ul>
+                    </div>
+                <?php else: ?>
+                    <a href="<?= $_CONFIG['base_url']; ?>viewer?download=true&path=<?= $path; ?>" class="btn btn-primary btn-lg py-3 w-100">
+                        <i class="fa-regular fa-download me-2"></i>
+                        Download
+                    </a>
+                <?php endif; ?>
 
                 <div class="card mt-3">
                     <div class="card-body">
@@ -148,7 +165,7 @@
         </div>
     </footer>
 
-    <script src="<?= $_CONFIG['base_url']; ?>assets/lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="<?= $_CONFIG['base_url']; ?>assets/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

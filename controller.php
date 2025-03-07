@@ -1,4 +1,5 @@
 <?php
+session_start();
 
 require_once 'vendor/autoload.php';
 require_once 'assets/config.php';
@@ -22,9 +23,47 @@ $_S3 = new S3Client($options);
 
 $_ROUTER = new \Bramus\Router\Router();
 
+// check if user is authenicated, else send to login page
+$protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+$url = $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+if (@$_SESSION['token'] !== md5($_ENV['CORRECT_PASSWORD']) && strpos($url, $_CONFIG['base_url'] . 'login') !== 0) {
+    $url = urlencode($url);
+    header('Location: ' . $_CONFIG['base_url'] . 'login?return_url=' . $url);
+    exit;
+}
+
 $_ROUTER->get('/', function () {
     global $_CONFIG;
     require_once 'views/index.view.php';
+});
+
+$_ROUTER->get('/login', function () {
+    global $_CONFIG;
+    require_once 'views/login.view.php';
+});
+
+$_ROUTER->post('/login', function () {
+    global $_CONFIG;
+    global $_S3;
+
+    $password = $_POST['password'] ?? '';
+    $return_url = $_GET['return_url'];
+
+    if ($password == $_ENV['CORRECT_PASSWORD']) {
+        $_SESSION['token'] = md5($password);
+        $return_url = urldecode($return_url);
+
+        if (empty($return_url)) {
+            $return_url = $_CONFIG['base_url'];
+        }
+
+        header('Location: ' . $return_url);
+        exit;
+    } else {
+        header('Location: ' . $_CONFIG['base_url'] . 'login?return_url=' . $return_url);
+        exit;
+    }
 });
 
 $_ROUTER->get('/cam/360', function () {
@@ -61,8 +100,14 @@ $_ROUTER->get('/viewer', function () {
 
     $path = $_GET['path'] ?? '';
 
-    // get signed url
-    $url = $_S3->getObjectUrl($_ENV['IONOS_S3_BUCKET'], $path, '+60 minutes');
+    // generate signed url (60min)
+    $cmd = $_S3->getCommand('GetObject', [
+        'Bucket' => $_ENV['IONOS_S3_BUCKET'],
+        'Key'    => $path
+    ]);
+
+    $request = $_S3->createPresignedRequest($cmd, '+60 minutes');
+    $url = (string) $request->getUri();
 
     // get object
     try {
@@ -86,8 +131,7 @@ $_ROUTER->get('/viewer', function () {
         exit;
     }
 
-    $size = $object['ContentLength'];
-    $size = round($size / 1024 / 1024, 2) . ' MB';
+    $size = round($object['ContentLength'] / 1024 / 1024, 2) . ' MB';
     $name = basename($path);
     $name = strtolower($name);
 
