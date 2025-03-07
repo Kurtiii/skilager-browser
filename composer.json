@@ -1,5 +1,7 @@
 {
     "require": {
-        "bramus/router": "^1.6"
+        "bramus/router": "^1.6",
+        "aws/aws-sdk-php": "^3.342",
+        "vlucas/phpdotenv": "^5.6"
     }
 }
